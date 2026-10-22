@@ -76,18 +76,3 @@ frontend/
   src/api.ts           every backend call + shared types
   vite.config.ts       proxies /api → backend
 ```
-
-## Working with Claude (`@claude`)
-
-Only one of us has a Claude account, so Claude is shared through GitHub:
-
-- **In an issue or PR comment**, write `@claude` followed by a specific request,
-  e.g. `@claude add a POST /api/scores endpoint that stores a name and score,
-  with a test`. Claude replies in the thread and pushes a branch or PR you can
-  review.
-- Use the **"Ask Claude"** issue template for bigger requests.
-- It uses one person's usage, so save it for real blockers, boilerplate, and
-  reviews. Don't use it for things you can do in five minutes.
-- **Always review what Claude pushes** before merging. You own the code.
-
-Quick questions can also go in Discord `#ask-claude`.
