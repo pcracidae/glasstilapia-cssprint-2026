@@ -8,15 +8,15 @@ Team GlassTilapia's CSSprint 2026 hackathon project.
 
 ## What we're building
 
-A loan-readiness coach that doubles as a bookkeeping app for micro retail and
-food businesses (sari-sari stores, carinderias, market vendors). It's a
-phone-first web app, free for owners, that never holds money or sells data.
+A bookkeeping app that additionally focuses on the loan-readiness of a micro 
+to small enterprise (sari-sari, karinderya, micro retail). It's a phone-first, 
+free for owners, and available offline web app.
 
-- **Ledger:** log sales, expenses and utang in a few taps; see today's profit.
+- **Ledger:** log sales, expenses and loans in a few taps; and see today's profit.
 - **Trust tiers:** each entry is verified, matched to a statement, corroborated,
   or self-reported.
-- **Loan-readiness coach:** what lenders look for and the owner's next step.
-- **Program matcher:** which loan programs the business likely qualifies for.
+- **AI consultant:** checks the ledger or financial statement for improvements and
+  for the analysis of the lender, and for a quick estimate of their borrowing capacity.
 - **Consent-based sharing:** the owner shares a summary with one lender, with an
   expiry and a revoke button.
 
