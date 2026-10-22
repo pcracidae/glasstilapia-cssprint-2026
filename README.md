@@ -1,6 +1,6 @@
 # glasstilapia-cssprint-2026
 
-Team glasstilapia's CSSprint 2026 hackathon project.
+Team GlassTilapia's CSSprint 2026 hackathon project.
 
 > **Start with [`CLAUDE.md`](CLAUDE.md).** It has the project brief, who owns
 > what, conventions, and the decisions log.
