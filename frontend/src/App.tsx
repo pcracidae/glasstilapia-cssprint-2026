@@ -136,7 +136,7 @@ function Main({ onLock }: { onLock: () => void }) {
       <div className={`scroll ${page ? "no-tabs" : ""}`}>{body}</div>
       {!page && (
         <>
-          {(tab === "transactions" || tab === "today") && (
+          {tab === "transactions" && (
             <button className="fab" aria-label="New entry" onClick={() => setNewEntry(true)}><Icon name="plus" size={26} /></button>
           )}
           <nav className="tabbar">

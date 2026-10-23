@@ -185,8 +185,9 @@ function sampleEntries(): Entry[] {
   const add = (back: number, e: Omit<Entry, "id" | "saleDate" | "recordedAt" | "time"> & { time?: string }) => {
     const saleDate = daysAgo(back, now);
     const time = e.time ?? `${String(7 + Math.floor(rand() * 13)).padStart(2, "0")}:${String(Math.floor(rand() * 60)).padStart(2, "0")}`;
-    // Notebook days were typed in on the day she joined.
-    const recDay = back > JOINED_DAYS_AGO ? daysAgo(JOINED_DAYS_AGO, now) : saleDate;
+    // Notebook days were typed in on the day she joined (or, for the last
+    // few notebook days, 3 days after the sale), so they all count as late.
+    const recDay = back > JOINED_DAYS_AGO ? daysAgo(Math.min(back - 3, JOINED_DAYS_AGO), now) : saleDate;
     const recordedAt = `${recDay}T${back > JOINED_DAYS_AGO ? "20:00" : time}:00`;
     out.push({ ...e, id: `s${++n}`, saleDate, time, recordedAt });
   };
@@ -197,20 +198,20 @@ function sampleEntries(): Entry[] {
   ];
 
   for (let back = 44; back >= 1; back--) {
-    const count = 4 + Math.floor(rand() * 4);
+    const count = 4 + Math.floor(rand() * 3);
     for (let i = 0; i < count; i++) {
       const r = rand();
-      const tier: Tier = r < 0.6 ? "verified" : r < 0.86 ? "corroborated" : "self_reported";
+      const tier: Tier = r < 0.64 ? "verified" : r < 0.88 ? "corroborated" : "self_reported";
       add(back, {
         kind: "sale",
-        amount: tier === "corroborated" ? (20 + Math.floor(rand() * 20)) * 10 : (3 + Math.floor(rand() * 18)) * 10,
+        amount: (2 + Math.floor(rand() * 16)) * 10,
         tier,
         description: tier === "corroborated" ? "Cash, deposited" : goods[Math.floor(rand() * goods.length)],
       });
     }
     if (back % 3 === 1) {
       add(back, {
-        kind: "purchase", amount: (16 + Math.floor(rand() * 8)) * 50, tier: "matched",
+        kind: "purchase", amount: (10 + Math.floor(rand() * 6)) * 50, tier: "matched",
         contact: "Pareng Gary", description: "Weekly restock", time: "09:10",
       });
     }

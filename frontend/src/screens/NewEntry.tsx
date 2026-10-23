@@ -2,7 +2,7 @@
 // including utang and stock on credit), contact, description, item breakdown.
 
 import { useState } from "react";
-import { CONTACTS, iso, peso, store, today, type Kind, type LineItem } from "../data";
+import { CONTACTS, KIND_LABEL, iso, peso, store, today, type Kind, type LineItem } from "../data";
 import { t } from "../i18n";
 import { Icon } from "../icons";
 import { Avatar, Badge, Sheet, SheetHead } from "../ui";
@@ -94,7 +94,7 @@ export function NewEntry({ onClose, onSaved, online }: { onClose: () => void; on
       items: items.length ? items : undefined,
       pending: !online,
     });
-    onSaved(online ? `${SAVE_LABEL[kind].replace("Save ", "")} saved` : "Saved on this phone. It will sync when you're back online.");
+    onSaved(online ? `${KIND_LABEL[kind]} saved` : "Saved on this phone. It will sync when you're back online.");
     onClose();
   };
 
