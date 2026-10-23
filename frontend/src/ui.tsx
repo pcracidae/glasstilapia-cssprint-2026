@@ -1,7 +1,7 @@
 // Small pieces shared by the screens.
 
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { CONTACTS, KIND_LABEL, TIER_LABEL, cashDelta, clock, peso, store, type Entry, type Tier } from "./data";
+import { CONTACTS, KIND_LABEL, cashDelta, clock, peso, store, type Entry } from "./data";
 import { Icon } from "./icons";
 
 let version = 0;
@@ -32,22 +32,6 @@ export function useOnline() {
   return online;
 }
 
-const TIER_ICON: Record<Tier, string> = {
-  verified: "check",
-  matched: "lines",
-  corroborated: "book",
-  self_reported: "pencil",
-};
-
-export function TierBadge({ tier }: { tier: Tier }) {
-  return (
-    <span className={`badge b-${tier}`}>
-      <Icon name={TIER_ICON[tier]} size={11} />
-      {TIER_LABEL[tier]}
-    </span>
-  );
-}
-
 export function Badge({ kind = "neutral", children }: { kind?: string; children: ReactNode }) {
   return <span className={`badge b-${kind}`}>{children}</span>;
 }
@@ -73,12 +57,12 @@ export function EntryRow({ e, onClick }: { e: Entry; onClick?: () => void }) {
   const delta = cashDelta(e);
   const cls = e.voided ? "void" : delta > 0 ? "in" : delta < 0 ? "out" : "credit";
   const amount = delta !== 0 ? peso(delta, true) : peso(e.amount);
-  const glyphBg = e.voided ? "#e8e8e4" : e.tier === "verified" ? "rgba(21,128,61,.12)" : e.tier === "matched" ? "rgba(3,105,161,.12)" : e.tier === "corroborated" ? "rgba(180,83,9,.12)" : "#f1f1ee";
-  const glyphColor = e.voided ? "#3c4043" : e.tier === "verified" ? "var(--green)" : e.tier === "matched" ? "var(--blue)" : e.tier === "corroborated" ? "var(--amber)" : "var(--muted)";
+  const glyphBg = e.voided ? "#e8e8e4" : "#f1f1ee";
+  const glyphColor = e.voided ? "#3c4043" : "var(--muted)";
   return (
     <button className={`row ${e.voided ? "voided" : ""}`} onClick={onClick}>
       <span className="glyph" style={{ background: glyphBg, color: glyphColor }}>
-        <Icon name={e.voided ? "voided" : e.tier === "self_reported" ? "circle" : TIER_ICON[e.tier]} size={18} />
+        <Icon name={e.voided ? "voided" : "circle"} size={18} />
       </span>
       <span className="row-main">
         <div className="row-title">{entryTitle(e)}</div>
@@ -88,9 +72,7 @@ export function EntryRow({ e, onClick }: { e: Entry; onClick?: () => void }) {
             <Badge kind="voided"><Icon name="voided" size={11} /> Voided</Badge>
           ) : e.pending ? (
             <Badge kind="pending"><Icon name="clock" size={11} /> Saved</Badge>
-          ) : (
-            <TierBadge tier={e.tier} />
-          )}
+          ) : null}
           {e.kind === "utang" && !e.voided && <Badge kind="red">Utang</Badge>}
           {e.kind === "purchase_credit" && !e.voided && <Badge kind="matched">On credit</Badge>}
         </div>
