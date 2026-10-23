@@ -75,4 +75,5 @@ npm run build                      # type-check + production build
 
 _Newest first. One line each: date — decision — why (— who)._
 
+- 2026-10-23 — Lender sharing sends a frozen summary for a chosen date range (itemized entries only as an opt-in, never customer names), one lender per link, expiring and revocable; reachable from the profile panel and from Apply on the Loan tab — mentor's security concern and owner-first consent — pcracidae
 - 2026-10-22 — Python (FastAPI) backend + React (Vite, TypeScript) frontend — team choice; TS types feel familiar coming from Java — pcracidae
