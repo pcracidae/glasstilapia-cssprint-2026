@@ -1,56 +1,12 @@
-// Transactions tab: the trust split bar, entries grouped by day with each
-// day's profit, the offline banner, entry details (void) and the tiers sheet.
+// Transactions tab: entries grouped by day with each day's profit, the
+// offline banner, and entry details (void).
 
 import { useState } from "react";
-import { cashDelta, clock, dayTotals, longDate, peso, shortDate, store, tierSplit, today, daysAgo, type Entry } from "../data";
+import { cashDelta, clock, dayTotals, longDate, peso, shortDate, store, today, daysAgo, type Entry } from "../data";
 import { t } from "../i18n";
 import { Icon } from "../icons";
-import { EntryRow, Sheet, SheetHead, TierBadge, Badge, entryTitle, useLedger } from "../ui";
+import { EntryRow, Sheet, SheetHead, Badge, entryTitle, useLedger } from "../ui";
 import type { Go } from "./Overview";
-
-export function TierBar({ onClick }: { onClick: () => void }) {
-  const es = useLedger();
-  const s = tierSplit(es);
-  const parts = [
-    { pct: s.verified, bg: "var(--green)", icon: "check" },
-    { pct: s.matched, bg: "var(--blue)", icon: "lines" },
-    { pct: s.corroborated, bg: "var(--amber)", icon: "book" },
-    { pct: s.self_reported, bg: "#5f6368", icon: "circle" },
-  ].filter((p) => p.pct > 0);
-  return (
-    <button className="tierbar" onClick={onClick} aria-label="How sure is each entry?">
-      {parts.map((p, i) => (
-        <span key={i} style={{ width: `${p.pct}%`, background: p.bg }}>
-          <Icon name={p.icon} size={11} /> {p.pct}%{i === 0 ? " verified" : ""}
-        </span>
-      ))}
-    </button>
-  );
-}
-
-export function TiersSheet({ onClose }: { onClose: () => void }) {
-  const rows: [React.ReactNode, string][] = [
-    [<TierBadge tier="verified" />, "Paid by QR Ph to your own store account. The payment system confirms it."],
-    [<TierBadge tier="matched" />, "Matches the e-wallet history or supplier receipt you imported."],
-    [<TierBadge tier="corroborated" />, "Cash that adds up with your bank or e-wallet deposits, or your wholesaler receipts."],
-    [<TierBadge tier="self_reported" />, "Your word only. It still counts in your own profit."],
-  ];
-  return (
-    <Sheet onClose={onClose}>
-      <div style={{ padding: "20px 20px 0" }}>
-        <h2 style={{ margin: "8px 0 4px", fontSize: 20 }}>How sure is each entry?</h2>
-        <div className="small muted">Every entry gets a label for how well it is backed up. Lenders trust the top ones most.</div>
-        {rows.map(([b, text], i) => (
-          <div key={i} style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 12, marginTop: 18, fontSize: 15 }}>
-            <div>{b}</div>
-            <div>{text}</div>
-          </div>
-        ))}
-      </div>
-      <button className="btn" onClick={onClose}>Got it</button>
-    </Sheet>
-  );
-}
 
 export function EntryDetails({ entry, onClose }: { entry: Entry; onClose: () => void }) {
   const [reason, setReason] = useState("");
@@ -88,7 +44,6 @@ export function Transactions({ go, openEntry, online, justSynced }: {
   go: Go; openEntry: (e: Entry) => void; online: boolean; justSynced: boolean;
 }) {
   const es = useLedger();
-  const [tiers, setTiers] = useState(false);
   const [days, setDays] = useState(7);
   const from = daysAgo(days - 1);
   const shown = es.filter((e) => e.saleDate >= from);
@@ -107,9 +62,7 @@ export function Transactions({ go, openEntry, online, justSynced }: {
       <div className="topbar">
         <h1>{t("Transactions")}</h1>
         <button className="icon-btn" aria-label="Share my records" onClick={() => go("share")}><Icon name="share" /></button>
-        <button className="icon-btn" aria-label="How sure is each entry?" onClick={() => setTiers(true)}><Icon name="help" /></button>
       </div>
-      <TierBar onClick={() => setTiers(true)} />
       {groups.map((g) => {
         const p = dayTotals(es, g.day).profit;
         return (
@@ -128,7 +81,6 @@ export function Transactions({ go, openEntry, online, justSynced }: {
       <p className="note center">
         <Badge kind="neutral">{es.filter((e) => e.pending).length} waiting to sync</Badge>
       </p>
-      {tiers && <TiersSheet onClose={() => setTiers(false)} />}
     </>
   );
 }

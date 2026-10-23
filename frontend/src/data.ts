@@ -518,8 +518,8 @@ export function entriesCsv(es: Entry[], from: string, to: string): string {
   const rows = live(es)
     .filter((e) => e.saleDate >= from && e.saleDate <= to)
     .sort((a, b) => (a.saleDate + a.time).localeCompare(b.saleDate + b.time));
-  const lines = ["date,time,kind,amount_php,trust_tier,late_entry"];
-  for (const e of rows) lines.push([e.saleDate, e.time, e.kind, e.amount, e.tier, isLate(e) ? "yes" : "no"].join(","));
+  const lines = ["date,time,kind,amount_php,late_entry,voided"];
+  for (const e of rows) lines.push([e.saleDate, e.time, e.kind, e.amount, isLate(e) ? "yes" : "no", "no"].join(","));
   return lines.join("\n") + "\n";
 }
 

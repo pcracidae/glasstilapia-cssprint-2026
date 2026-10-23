@@ -3,18 +3,11 @@
 // shows customer names, descriptions or notes.
 
 import { useEffect, useRef } from "react";
-import { STORE, TIER_LABEL, downloadCsv, entriesCsv, shortDate, statement, store, type Share } from "../data";
+import { STORE, downloadCsv, entriesCsv, shortDate, statement, store, type Share } from "../data";
 import { shareStatus } from "./Share";
 
 const n = (v: number) => v.toLocaleString("en-US");
 const neg = (v: number) => (v ? `(${n(v)})` : "0");
-
-const TIER_NOTE = {
-  verified: "Confirmed by the payment provider (QR Ph payments to the store's own account)",
-  matched: "Matched to an e-wallet transaction history imported by the owner",
-  corroborated: "Cash totals consistent with bank deposits and supplier receipts",
-  self_reported: "Recorded by the owner without supporting evidence",
-};
 
 export function refNo(s: Share) {
   return `SR-${s.createdAt.slice(0, 4)}-${s.createdAt.slice(5, 7)}${s.createdAt.slice(8, 10)}-${s.token.slice(0, 4).toUpperCase()}`;
@@ -85,22 +78,12 @@ export function Statement({ token }: { token: string }) {
             </tbody>
           </table>
 
-          <h2>2. Supporting evidence for cash receipts</h2>
-          <table>
-            <thead><tr><th>Evidence level</th><th>PHP</th><th>Share</th></tr></thead>
-            <tbody>
-              {st.tiers.map((t) => (
-                <tr key={t.tier}><td>{t.tier === "self_reported" ? "Owner-reported" : TIER_LABEL[t.tier]}<small>{TIER_NOTE[t.tier]}</small></td><td className="n">{n(t.amount)}</td><td className="n">{t.pct}%</td></tr>
-              ))}
-              <tr className="total"><td>Total cash receipts</td><td className="n">{n(st.receipts)}</td><td className="n">100%</td></tr>
-            </tbody>
-          </table>
         </>
       )}
 
       {has("monthly") && (
         <>
-          <h2>3. Monthly summary</h2>
+          <h2>2. Monthly summary</h2>
           <table>
             <thead><tr><th>Month</th><th>Receipts</th><th>Expenses</th><th>Net</th></tr></thead>
             <tbody>
@@ -115,7 +98,7 @@ export function Statement({ token }: { token: string }) {
 
       {has("receivables") && (
         <>
-          <h2>4. Accounts receivable (credit sales to customers)</h2>
+          <h2>3. Accounts receivable (credit sales to customers)</h2>
           <table>
             <thead><tr><th></th><th>Amount (PHP)</th></tr></thead>
             <tbody>
@@ -140,7 +123,7 @@ export function Statement({ token }: { token: string }) {
 
       {has("cash_flow") && (
         <>
-          <h2>5. Record completeness</h2>
+          <h2>4. Record completeness</h2>
           <table>
             <tbody>
               <tr><td>Days with recorded entries</td><td className="n">{st.completeness.daysWithEntries} of {st.days}</td></tr>

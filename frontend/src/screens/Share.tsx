@@ -92,7 +92,7 @@ export function ShareCheck({ draft, back, onShared }: { draft: ShareDraft; back:
         {opt("cash_flow", "Cash flow", `Income ${peso(st.receipts)} · expenses ${peso(st.stock + st.opex)} · profit ${peso(st.net)}`)}
         {opt("monthly", "Month-by-month totals", "Income, expenses and profit for each month")}
         {opt("receivables", "Money owed to you", `${peso(owed.total)} in total, by age. Never who owes it`)}
-        {opt("entries", "Each entry, as a CSV file", "Date, amount and trust tier of every entry")}
+        {opt("entries", "Each entry, as a CSV file", "Date, kind and amount of every entry")}
       </div>
       <div className="group">They won't see</div>
       <div className="rows">
