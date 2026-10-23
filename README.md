@@ -1,10 +1,10 @@
-# LedgeLeaf
+# LedgeLoan
 
 **From notebook to loan-ready.**
 
 Team GlassTilapia · CSSprint 2026
 
-LedgeLeaf is a phone-first web app for micro businesses that sell for cash
+LedgeLoan is a phone-first web app for micro businesses that sell for cash
 every day, like sari-sari stores, carinderias and market stalls. Owners log
 sales, expenses and utang in a few taps, see their real profit today, and
 build a record a lender can trust. When they're ready, they share that record
@@ -20,7 +20,7 @@ enterprises. Owners end up with 5-6 lending at about 20% a month.
 ## What's in the app
 
 The demo runs as **Aling Nena**, who has a sari-sari store in Quezon City.
-She started LedgeLeaf 7 days ago and copied her older days in from her
+She started LedgeLoan 7 days ago and copied her older days in from her
 notebook.
 
 | Screen | What you can do |
@@ -99,7 +99,7 @@ backend/             FastAPI (optional for the demo)
 - No API keys, tokens or passwords are in this repository. Secrets go in
   `backend/.env`, which is git-ignored; `backend/.env.example` holds
   placeholders only.
-- LedgeLeaf never holds money, never sells data, and shares records only with
+- LedgeLoan never holds money, never sells data, and shares records only with
   the lender the owner picks.
 - The sign-in code is a demo code: no SMS or email is sent yet.
 
