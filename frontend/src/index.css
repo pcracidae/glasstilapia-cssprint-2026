@@ -71,10 +71,13 @@ input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- hero cards ---------- */
 .hero-wrap { padding: 4px 20px 0; position: relative; }
-.hero-stack { position: relative; padding-bottom: 14px; }
-.hero-stack::before, .hero-stack::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 6px; height: 30px; border-radius: 0 0 16px 16px; background: #e8b90f; }
-.hero-stack::after { left: 24px; right: 24px; bottom: 0; background: var(--blue); }
-.hero { position: relative; z-index: 1; border-radius: 16px; padding: 18px 20px 0; color: #fff; overflow: hidden; box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25); touch-action: pan-y; user-select: none; }
+.card-stack { position: relative; height: 214px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.card-stack .hero { position: absolute; left: 0; right: 0; top: 0; height: 185px; transform-origin: 50% 50%; will-change: transform; }
+.stack-dots { display: flex; justify-content: center; gap: 6px; margin-top: 2px; }
+.stack-dots button { width: 7px; height: 7px; border-radius: 4px; border: 0; padding: 0; background: var(--divider); transition: width 0.2s, background 0.2s; }
+.stack-dots button.on { width: 18px; background: var(--teal); }
+.hero { position: relative; border-radius: 16px; padding: 18px 20px 0; color: #fff; overflow: hidden; box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25); display: flex; flex-direction: column; }
+.hero-body { flex: 1; }
 .hero.teal { background: linear-gradient(135deg, #0f766e, #14917f 60%, #0d6b62); }
 .hero.blue { background: linear-gradient(135deg, #075985, #0369a1); box-shadow: 0 8px 24px rgba(3, 105, 161, 0.25); }
 .hero.yellow { background: linear-gradient(135deg, #fcd34d, #facc15 55%, #eab308); color: var(--loan-text); box-shadow: 0 8px 24px rgba(234, 179, 8, 0.3); }
@@ -82,15 +85,17 @@ input, select, textarea { font: inherit; color: inherit; }
 .hero .big { font-family: var(--mono); font-size: 32px; font-weight: 700; margin: 4px 0; letter-spacing: -0.5px; }
 .hero .headline { font-size: 30px; font-weight: 700; margin: 6px 0 4px; letter-spacing: -0.5px; }
 .hero .caption { font-size: 14px; opacity: 0.9; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-.hero .foot { display: flex; align-items: center; justify-content: space-between; margin: 14px -20px 0; padding: 14px 20px; border-top: 1px solid rgba(255, 255, 255, 0.18); font-weight: 600; background: none; border-left: 0; border-right: 0; border-bottom: 0; color: inherit; width: calc(100% + 40px); text-align: left; font-size: 15px; }
+.hero .foot { display: flex; align-items: center; justify-content: space-between; margin: 10px -20px 0; padding: 14px 20px; border-top: 1px solid rgba(255, 255, 255, 0.18); font-weight: 600; background: none; border-left: 0; border-right: 0; border-bottom: 0; color: inherit; width: calc(100% + 40px); text-align: left; font-size: 15px; }
 .hero.yellow .foot { border-top-color: rgba(74, 44, 5, 0.15); }
-.hero .dots { position: absolute; right: 18px; top: 20px; display: flex; gap: 4px; }
-.hero .dots i { width: 6px; height: 6px; border-radius: 3px; background: currentColor; opacity: 0.45; }
-.hero .dots i.on { width: 16px; opacity: 1; }
+.hero .dots { position: absolute; right: 24px; top: 24px; display: flex; gap: 5px; z-index: 2; }
+.hero .dots i { width: 6px; height: 6px; border-radius: 3px; background: currentColor; opacity: 0.45; position: relative; overflow: hidden; }
+.hero .dots i.on { width: 16px; opacity: 1; background: none; }
+.hero .dots i.on::before { content: ""; position: absolute; inset: 0; background: currentColor; opacity: 0.45; }
+.hero .dots i.on b { position: absolute; left: 0; top: 0; bottom: 0; background: currentColor; }
 .hero .watermark { position: absolute; right: -16px; bottom: 30px; opacity: 0.08; pointer-events: none; }
-.hero .split { display: grid; grid-template-columns: 1fr 1fr; margin: 0 -20px; }
-.hero .split > button { background: none; border: 0; color: inherit; text-align: left; padding: 0 20px 16px; }
-.hero .split > button + button { background: rgba(0, 0, 0, 0.12); padding-top: 18px; margin-top: -18px; }
+.hero .split { display: grid; grid-template-columns: 1fr 1fr; margin: -18px -20px 0; flex: 1; }
+.hero .split > button { background: none; border: 0; color: inherit; text-align: left; padding: 18px 20px 16px; }
+.hero .split > button + button { background: rgba(0, 0, 0, 0.12); }
 .hero .split .big { font-size: 28px; }
 .progress { height: 6px; border-radius: 3px; background: rgba(74, 44, 5, 0.15); margin: 10px 0 2px; overflow: hidden; }
 .progress > i { display: block; height: 100%; background: var(--loan-text); border-radius: 3px; }

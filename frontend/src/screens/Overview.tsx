@@ -2,11 +2,11 @@
 // cards (today's profit, credit, loan readiness), the latest entries and
 // what to do next.
 
-import { useRef, useState } from "react";
 import { balances, dayTotals, longDate, peso, readiness, store, today, type Entry } from "../data";
 import { t } from "../i18n";
 import { Icon } from "../icons";
 import { Avatar, EntryRow, useLedger } from "../ui";
+import { CardStack, type StackCard } from "./CardStack";
 
 export type Go = (to: string) => void;
 
@@ -29,14 +29,8 @@ export function StoreHeader({ go, onProfile }: { go: Go; onProfile: () => void }
   );
 }
 
-function Dots({ on }: { on: number }) {
-  return <span className="dots">{[0, 1, 2].map((i) => <i key={i} className={i === on ? "on" : ""} />)}</span>;
-}
-
 export function Overview({ go, openEntry, onProfile }: { go: Go; openEntry: (e: Entry) => void; onProfile: () => void }) {
   const es = useLedger();
-  const [card, setCard] = useState(0);
-  const startX = useRef<number | null>(null);
   const day = dayTotals(es, today());
   const owed = balances(es, "customer");
   const owe = balances(es, "supplier");
@@ -45,76 +39,67 @@ export function Overview({ go, openEntry, onProfile }: { go: Go; openEntry: (e: 
   const loggedToday = es.some((e) => e.saleDate === today() && e.kind === "sale" && !e.voided && !e.id.startsWith("s"));
   const overdue = owed.rows.find((x) => x.days > 30);
 
-  const swipe = {
-    onPointerDown: (ev: React.PointerEvent) => { startX.current = ev.clientX; },
-    onPointerUp: (ev: React.PointerEvent) => {
-      if (startX.current === null) return;
-      const dx = ev.clientX - startX.current;
-      startX.current = null;
-      if (dx < -40) setCard((c) => Math.min(2, c + 1));
-      else if (dx > 40) setCard((c) => Math.max(0, c - 1));
+  const cards: StackCard[] = [
+    {
+      className: "teal",
+      render: () => (
+        <>
+          <Icon name="leaf" size={150} className="watermark" />
+          <div className="hero-body">
+            <div className="label">{t("Today's profit")}</div>
+            <div className="big">{peso(day.profit)}</div>
+            <div className="caption mono">
+              <span><Icon name="arrowUp" size={14} /> {peso(day.cashIn)} <span style={{ fontFamily: "Inter" }}>in</span></span>
+              <span><Icon name="arrowDown" size={14} /> {peso(day.cashOut)} <span style={{ fontFamily: "Inter" }}>out</span></span>
+            </div>
+          </div>
+          <button className="foot" onClick={() => go("transactions")}>
+            {t("Go to Transactions")} <Icon name="chevron" size={18} />
+          </button>
+        </>
+      ),
     },
-  };
+    {
+      className: "blue",
+      render: () => (
+        <div className="split">
+          <button onClick={() => go("contacts:customer")}>
+            <div className="label">{t("You're owed")}</div>
+            <div className="big">{peso(owed.total)}</div>
+            <div className="small" style={{ opacity: 0.85 }}>{owed.rows.length} customers</div>
+            <div className="faces">{owed.rows.slice(0, 3).map((x) => <Avatar key={x.name} name={x.name} />)}<Icon name="chevron" size={18} style={{ marginLeft: 12 }} /></div>
+          </button>
+          <button onClick={() => go("contacts:supplier")}>
+            <div className="label">{t("You owe")}</div>
+            <div className="big">{peso(owe.total)}</div>
+            <div className="small" style={{ opacity: 0.85 }}>{owe.rows.length} suppliers</div>
+            <div className="faces">{owe.rows.slice(0, 3).map((x) => <Avatar key={x.name} name={x.name} />)}<Icon name="chevron" size={18} style={{ marginLeft: 12 }} /></div>
+          </button>
+        </div>
+      ),
+    },
+    {
+      className: "yellow",
+      render: () => (
+        <>
+          <div className="hero-body">
+            <div className="label">{t("Loan readiness")}</div>
+            <div className="headline">{r.daysToP3 > 0 ? `${r.daysToP3} days to P3-ready` : "P3-ready"}</div>
+            <div className="small">{r.daysOnTime} of 30 days logged · up to <span className="mono">₱50,000</span></div>
+            <div className="progress"><i style={{ width: `${(r.daysOnTime / 30) * 100}%` }} /></div>
+          </div>
+          <button className="foot" onClick={() => go("loan")}>
+            {t("Go to Loan")} <Icon name="chevron" size={18} />
+          </button>
+        </>
+      ),
+    },
+  ];
 
   return (
     <>
       <StoreHeader go={go} onProfile={onProfile} />
-      <div className="hero-wrap">
-        <div className="hero-stack">
-          {card === 0 && (
-            <div className="hero teal" {...swipe}>
-              <Dots on={0} />
-              <Icon name="leaf" size={150} className="watermark" />
-              <div className="label">{t("Today's profit")}</div>
-              <div className="big">{peso(day.profit)}</div>
-              <div className="caption mono">
-                <span><Icon name="arrowUp" size={14} /> {peso(day.cashIn)} <span style={{ fontFamily: "Inter" }}>in</span></span>
-                <span><Icon name="arrowDown" size={14} /> {peso(day.cashOut)} <span style={{ fontFamily: "Inter" }}>out</span></span>
-              </div>
-              <button className="foot" onClick={() => go("transactions")}>
-                {t("Go to Transactions")} <Icon name="chevron" size={18} />
-              </button>
-            </div>
-          )}
-          {card === 1 && (
-            <div className="hero blue" {...swipe}>
-              <Dots on={1} />
-              <div className="split">
-                <button onClick={() => go("contacts:customer")}>
-                  <div className="label">{t("You're owed")}</div>
-                  <div className="big">{peso(owed.total)}</div>
-                  <div className="small" style={{ opacity: 0.85 }}>{owed.rows.length} customers</div>
-                  <div className="faces">{owed.rows.slice(0, 3).map((x) => <Avatar key={x.name} name={x.name} />)}<Icon name="chevron" size={18} style={{ marginLeft: 12 }} /></div>
-                </button>
-                <button onClick={() => go("contacts:supplier")}>
-                  <div className="label">{t("You owe")}</div>
-                  <div className="big">{peso(owe.total)}</div>
-                  <div className="small" style={{ opacity: 0.85 }}>{owe.rows.length} suppliers</div>
-                  <div className="faces">{owe.rows.slice(0, 3).map((x) => <Avatar key={x.name} name={x.name} />)}<Icon name="chevron" size={18} style={{ marginLeft: 12 }} /></div>
-                </button>
-              </div>
-            </div>
-          )}
-          {card === 2 && (
-            <div className="hero yellow" {...swipe}>
-              <Dots on={2} />
-              <div className="label">{t("Loan readiness")}</div>
-              <div className="headline">{r.daysToP3 > 0 ? `${r.daysToP3} days to P3-ready` : "P3-ready"}</div>
-              <div className="small">{r.daysOnTime} of 30 days logged · up to <span className="mono">₱50,000</span></div>
-              <div className="progress"><i style={{ width: `${(r.daysOnTime / 30) * 100}%` }} /></div>
-              <button className="foot" onClick={() => go("loan")}>
-                {t("Go to Loan")} <Icon name="chevron" size={18} />
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="center" style={{ marginTop: 4 }}>
-          {[0, 1, 2].map((i) => (
-            <button key={i} aria-label={`Card ${i + 1}`} onClick={() => setCard(i)}
-              style={{ width: i === card ? 18 : 7, height: 7, borderRadius: 4, border: 0, margin: "0 3px", background: i === card ? "var(--teal)" : "var(--divider)", padding: 0 }} />
-          ))}
-        </div>
-      </div>
+      <CardStack cards={cards} />
 
       <div className="group home">
         <span>{t("Latest")}</span>
