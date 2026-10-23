@@ -23,7 +23,14 @@ Tier = Literal["verified", "matched", "corroborated", "self_reported"]
 LATE_AFTER = timedelta(hours=48)
 
 DEMO_OWNER_ID = "nena"
-STORE_NAMES = {DEMO_OWNER_ID: "Aling Nena's Sari-sari Store"}
+STORE_PROFILES = {
+    DEMO_OWNER_ID: {
+        "store_name": "Aling Nena's Sari-sari Store",
+        "business_type": "Sari-sari store",
+        "city": "Quezon City",
+        "operating_since": 2019,
+    },
+}
 
 
 class Entry(BaseModel):

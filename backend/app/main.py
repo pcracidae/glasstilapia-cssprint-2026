@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import items, shares
+from app.routes import exports, items, shares
 
 load_dotenv()  # reads backend/.env if present (never commit .env)
 
@@ -32,3 +32,4 @@ def health() -> dict:
 app.include_router(items.router, prefix="/api/items", tags=["items"])
 app.include_router(shares.owner_router, prefix="/api/shares", tags=["shares"])
 app.include_router(shares.lender_router, prefix="/api/shared", tags=["lender view"])
+app.include_router(exports.router, prefix="/api/exports", tags=["exports"])

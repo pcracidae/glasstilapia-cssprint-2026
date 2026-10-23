@@ -1,15 +1,18 @@
-"""Consent-based sharing: the owner shares a summary of their records with
-one lender, for one purpose, for a set time, and can revoke it any time.
+"""Record sharing: the owner shares chosen parts of their records with one
+lender through a link that expires and can be revoked any time.
+
+Sharing is separate from loan coaching and program matching. It doesn't know
+about programs; it only packages records (see app/records.py) behind a link.
 
 Security rules this file keeps (see the product brief, section 6):
-- The lender only ever gets a `LenderView`. It has no field for customer
-  names, notes or entry ids, so they can't leak by accident.
+- The lender only gets a `RecordsPackage` plus who it's for. Packages have no
+  field for customer names, notes or entry ids, so they can't leak by accident.
 - What the lender sees is frozen when the owner confirms, so the owner
   consents to exactly what they previewed. To share newer numbers, share again.
 - Links are random 256-bit tokens. We store only a SHA-256 hash, so a leak of
   this store doesn't leak working links.
 - Expired, revoked and unknown links all get the same 404.
-- Every lender view is logged and shown to the owner.
+- Every lender view and CSV download is logged and shown to the owner.
 
 Data lives in memory, so shares reset when the server restarts.
 """
@@ -21,80 +24,49 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response
-from pydantic import BaseModel, Field, model_validator
+from fastapi.responses import PlainTextResponse
+from pydantic import BaseModel, Field, field_validator
 
 from app.auth import current_owner
-from app.ledger import STORE_NAMES, Entry, Kind, Tier, entries_for_owner
+from app.records import (
+    DEFAULT_SECTIONS, DateRange, RecordsPackage, Section, build_package, entries_csv,
+)
 
 owner_router = APIRouter()
 lender_router = APIRouter()
 
-MAX_RANGE_DAYS = 180
 NOT_AVAILABLE = "This link is not available. Ask the store owner for a new one."
+NO_STORE = {
+    "Cache-Control": "no-store",
+    "Referrer-Policy": "no-referrer",
+    "X-Robots-Tag": "noindex",
+}
 
 
 # ---- Models -------------------------------------------------------------
 
 
-class ShareIn(BaseModel):
+class ShareIn(DateRange):
     lender_name: str = Field(min_length=1, max_length=80)
     purpose: str = Field(min_length=1, max_length=120)
-    date_from: date
-    date_to: date
+    sections: list[Section] = Field(default_factory=lambda: list(DEFAULT_SECTIONS))
     expires_in_days: Literal[7, 14, 30] = 7
-    include_entries: bool = False
-    # Set when the share starts from a program's "Apply" on the Loan tab.
-    program_id: str | None = Field(default=None, max_length=40)
 
-    @model_validator(mode="after")
-    def check_range(self) -> "ShareIn":
-        if self.date_from > self.date_to:
-            raise ValueError("date_from must be on or before date_to")
-        if self.date_to > date.today():
-            raise ValueError("date_to can't be in the future")
-        if (self.date_to - self.date_from).days + 1 > MAX_RANGE_DAYS:
-            raise ValueError(f"date range can be at most {MAX_RANGE_DAYS} days")
-        return self
-
-
-class TierSplit(BaseModel):
-    """Share of income by trust tier, in whole percent."""
-    verified: int
-    matched: int
-    corroborated: int
-    self_reported: int
-
-
-class Summary(BaseModel):
-    income: int
-    expenses: int
-    profit: int
-    utang_outstanding: int
-    income_by_tier: TierSplit
-    days_in_range: int
-    days_logged: int  # days with at least one on-time entry
-    late_entry_percent: int
-
-
-class SharedEntry(BaseModel):
-    """One ledger line as a lender sees it: no customer, no note, no id."""
-    sale_date: date
-    kind: Kind
-    amount: int
-    tier: Tier
-    late: bool
+    @field_validator("sections")
+    @classmethod
+    def at_least_one(cls, v: list[Section]) -> list[Section]:
+        if not v:
+            raise ValueError("pick at least one section to share")
+        return v
 
 
 class LenderView(BaseModel):
-    store_name: str
     lender_name: str
     purpose: str
-    date_from: date
-    date_to: date
     shared_at: datetime
     expires_at: datetime
-    summary: Summary
-    entries: list[SharedEntry] | None = None
+    csv_available: bool
+    records: RecordsPackage
 
 
 class Share(BaseModel):
@@ -102,10 +74,9 @@ class Share(BaseModel):
     id: str
     lender_name: str
     purpose: str
-    program_id: str | None
     date_from: date
     date_to: date
-    include_entries: bool
+    sections: list[Section]
     created_at: datetime
     expires_at: datetime
     revoked_at: datetime | None
@@ -123,6 +94,7 @@ class ShareCreated(Share):
 class View(BaseModel):
     viewed_at: datetime
     device: str
+    action: Literal["opened", "downloaded CSV"]
 
 
 class _ShareRecord(BaseModel):
@@ -151,53 +123,12 @@ def _hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def _percent(part: int, whole: int) -> int:
-    return round(100 * part / whole) if whole else 0
-
-
-def build_lender_view(owner_id: str, req: ShareIn, shared_at: datetime,
-                      expires_at: datetime) -> LenderView:
-    entries: list[Entry] = [
-        e for e in entries_for_owner(owner_id)
-        if req.date_from <= e.sale_date <= req.date_to
-    ]
-    income_entries = [e for e in entries if e.kind in ("sale", "utang_paid")]
-    income = sum(e.amount for e in income_entries)
-    by_tier = {t: 0 for t in ("verified", "matched", "corroborated", "self_reported")}
-    for e in income_entries:
-        by_tier[e.tier] += e.amount
-    expenses = sum(e.amount for e in entries if e.kind == "expense")
-    utang = sum(e.amount for e in entries if e.kind == "utang")
-    utang -= sum(e.amount for e in entries if e.kind == "utang_paid")
-
-    summary = Summary(
-        income=income,
-        expenses=expenses,
-        profit=income - expenses,
-        utang_outstanding=max(utang, 0),
-        income_by_tier=TierSplit(**{t: _percent(v, income) for t, v in by_tier.items()}),
-        days_in_range=(req.date_to - req.date_from).days + 1,
-        days_logged=len({e.sale_date for e in entries if not e.is_late}),
-        late_entry_percent=_percent(sum(e.is_late for e in entries), len(entries)),
-    )
-    shared = None
-    if req.include_entries:
-        shared = [
-            SharedEntry(sale_date=e.sale_date, kind=e.kind, amount=e.amount,
-                        tier=e.tier, late=e.is_late)
-            for e in sorted(entries, key=lambda e: e.sale_date)
-        ]
-    return LenderView(
-        store_name=STORE_NAMES.get(owner_id, "Store"),
-        lender_name=req.lender_name,
-        purpose=req.purpose,
-        date_from=req.date_from,
-        date_to=req.date_to,
-        shared_at=shared_at,
-        expires_at=expires_at,
-        summary=summary,
-        entries=shared,
-    )
+def _lender_view(owner_id: str, req: ShareIn, shared_at: datetime,
+                 expires_at: datetime) -> LenderView:
+    pkg = build_package(owner_id, req.date_from, req.date_to, req.sections)
+    return LenderView(lender_name=req.lender_name, purpose=req.purpose,
+                      shared_at=shared_at, expires_at=expires_at,
+                      csv_available=pkg.entries is not None, records=pkg)
 
 
 def _status(rec: _ShareRecord) -> Literal["active", "expired", "revoked"]:
@@ -213,10 +144,9 @@ def _to_share(rec: _ShareRecord) -> Share:
         id=rec.id,
         lender_name=rec.request.lender_name,
         purpose=rec.request.purpose,
-        program_id=rec.request.program_id,
         date_from=rec.request.date_from,
         date_to=rec.request.date_to,
-        include_entries=rec.request.include_entries,
+        sections=rec.snapshot.records.sections,
         created_at=rec.created_at,
         expires_at=rec.expires_at,
         revoked_at=rec.revoked_at,
@@ -231,6 +161,15 @@ def _owned(share_id: str, owner_id: str) -> _ShareRecord:
     # Someone else's share looks exactly like a missing one.
     if rec is None or rec.owner_id != owner_id:
         raise HTTPException(status_code=404, detail="Share not found")
+    return rec
+
+
+def _active_by_token(token: str) -> _ShareRecord:
+    token_hash = _hash(token)
+    rec = next((r for r in _shares.values()
+                if secrets.compare_digest(r.token_hash, token_hash)), None)
+    if rec is None or _status(rec) != "active":
+        raise HTTPException(status_code=404, detail=NOT_AVAILABLE, headers=NO_STORE)
     return rec
 
 
@@ -252,8 +191,7 @@ def _device(user_agent: str | None) -> str:
 def preview_share(payload: ShareIn, owner_id: str = Depends(current_owner)) -> LenderView:
     """What the lender would see. The consent screen shows this before Confirm."""
     now = _now()
-    return build_lender_view(owner_id, payload, now,
-                             now + timedelta(days=payload.expires_in_days))
+    return _lender_view(owner_id, payload, now, now + timedelta(days=payload.expires_in_days))
 
 
 @owner_router.post("", response_model=ShareCreated, status_code=201)
@@ -266,7 +204,7 @@ def create_share(payload: ShareIn, owner_id: str = Depends(current_owner)) -> Sh
         owner_id=owner_id,
         token_hash=_hash(token),
         request=payload,
-        snapshot=build_lender_view(owner_id, payload, now, expires_at),
+        snapshot=_lender_view(owner_id, payload, now, expires_at),
         created_at=now,
         expires_at=expires_at,
     )
@@ -293,22 +231,28 @@ def list_views(share_id: str, owner_id: str = Depends(current_owner)) -> list[Vi
     return list(reversed(_owned(share_id, owner_id).views))
 
 
-# ---- Lender endpoint (/api/shared/{token}), no login --------------------
+# ---- Lender endpoints (/api/shared/{token}), no login -------------------
 
 
 @lender_router.get("/{token}", response_model=LenderView)
 def open_share(token: str, response: Response,
                user_agent: str | None = Header(default=None)) -> LenderView:
-    # Don't let browsers, proxies or search engines keep a copy.
-    response.headers["Cache-Control"] = "no-store"
-    response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["X-Robots-Tag"] = "noindex"
-
-    token_hash = _hash(token)
-    rec = next((r for r in _shares.values()
-                if secrets.compare_digest(r.token_hash, token_hash)), None)
-    if rec is None or _status(rec) != "active":
-        raise HTTPException(status_code=404, detail=NOT_AVAILABLE,
-                            headers={"Cache-Control": "no-store"})
-    rec.views.append(View(viewed_at=_now(), device=_device(user_agent)))
+    response.headers.update(NO_STORE)
+    rec = _active_by_token(token)
+    rec.views.append(View(viewed_at=_now(), device=_device(user_agent), action="opened"))
     return rec.snapshot
+
+
+@lender_router.get("/{token}/entries.csv", response_class=PlainTextResponse)
+def download_share_csv(token: str,
+                       user_agent: str | None = Header(default=None)) -> PlainTextResponse:
+    rec = _active_by_token(token)
+    entries = rec.snapshot.records.entries
+    if entries is None:  # the owner didn't share itemized entries
+        raise HTTPException(status_code=404, detail=NOT_AVAILABLE, headers=NO_STORE)
+    rec.views.append(View(viewed_at=_now(), device=_device(user_agent),
+                          action="downloaded CSV"))
+    pkg = rec.snapshot.records
+    name = f"records-{pkg.date_from}-to-{pkg.date_to}.csv"
+    return PlainTextResponse(entries_csv(entries), media_type="text/csv", headers={
+        **NO_STORE, "Content-Disposition": f'attachment; filename="{name}"'})
