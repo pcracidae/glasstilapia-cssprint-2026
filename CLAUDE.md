@@ -75,4 +75,6 @@ npm run build                      # type-check + production build
 
 _Newest first. One line each: date — decision — why (— who)._
 
+- 2026-10-23 — UI follows `DESIGN.md` (rules taken from the Overview and Transactions screens; sign-in screens keep their own look) — older screens looked out of date next to the newer ones — pcracidae
+
 - 2026-10-22 — Python (FastAPI) backend + React (Vite, TypeScript) frontend — team choice; TS types feel familiar coming from Java — pcracidae
