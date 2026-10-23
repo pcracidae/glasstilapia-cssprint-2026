@@ -7,7 +7,7 @@ decision, add a line to the Decisions log at the bottom.
 
 - **Event:** CSSprint 2026 hackathon (3 days)
 - **Problem statement:** _TBD — paste it here as soon as it's announced._
-- **One-sentence pitch:** _TBD — "[Who] can [do what] so that [why it matters]."_
+- **App name:** LedgeLeaf. **Pitch:** "From notebook to loan-ready."
 - **Core demo (what judges see on screen):**
   1. _TBD_
   2. _TBD_
@@ -30,7 +30,7 @@ decision, add a line to the Decisions log at the bottom.
 - **Dev wiring:** Vite proxies `/api/*` → `http://localhost:8000`, so the
   frontend just calls `fetch("/api/...")`. All API calls live in
   `frontend/src/api.ts`.
-- **Data:** in-memory for now. Add SQLite only if the demo needs it.
+- **Data:** the frontend keeps the ledger in localStorage (`frontend/src/data.ts`) so the demo works offline. Add SQLite only if the demo needs it.
 
 ## Commands
 
@@ -74,5 +74,8 @@ npm run build                      # type-check + production build
 ## Decisions log
 
 _Newest first. One line each: date — decision — why (— who)._
+
+- 2026-10-23 — App named LedgeLeaf; demo ledger runs in the browser (localStorage) with Aling Nena's sample data, sharing backend (PR #5) to be wired in next — deadline, and the demo must work offline — Gabriel
+- 2026-10-23 — Sample numbers: today's profit ₱1,240, owed to you ₱1,240 (4 customers), you owe ₱3,200, 7 of 30 days logged on time (23 days to P3-ready) — one consistent set across Overview, Loan and the lender statement — Gabriel
 
 - 2026-10-22 — Python (FastAPI) backend + React (Vite, TypeScript) frontend — team choice; TS types feel familiar coming from Java — pcracidae
