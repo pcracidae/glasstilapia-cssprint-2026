@@ -75,4 +75,5 @@ npm run build                      # type-check + production build
 
 _Newest first. One line each: date — decision — why (— who)._
 
+- 2026-10-23 — Record sharing is its own system, separate from loan coaching and program matching: the owner picks sections (profile, cash flow, monthly, receivables, itemized entries) for a date range and shares them through an expiring, revocable link to one lender, or exports a CSV; customer names never leave — lenders ask for more than cash flow, and security is the mentor's top concern — pcracidae
 - 2026-10-22 — Python (FastAPI) backend + React (Vite, TypeScript) frontend — team choice; TS types feel familiar coming from Java — pcracidae
